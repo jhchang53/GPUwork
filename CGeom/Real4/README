@@ -1,0 +1,7 @@
+
+float version  for speed check
+  float version take longer time than double.
+  since distance error (eps).
+
+
+

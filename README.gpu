@@ -1,0 +1,15 @@
+
+$ lspci -v
+  show Devce model
+
+$ nvidia-smi -q
+
+   Device 2487
+
+$ nvidia-smi --query-gpu=compute_cap --format=csv
+
+
+debugging
+
+$ cuda-gpu ./testprog
+

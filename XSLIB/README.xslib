@@ -1,0 +1,267 @@
+XS library structure
+ref) genlib.f, libdump.f  assembly.f
+
+header section
+
+read(nbin) libname, num_fast_gps, num_therm_gps, num_gam_gps, num_iso
+  libname (char*80): 
+  num_fast_gps
+  num_therm_gps
+  num_gam_gps
+  num_iso
+read(nbin) fastfile,thermfile,gamfile,rttfile,document
+  fastfile (char*80):
+  thermfile (char*80):
+  gamfile (char*80):
+  rttfile (char*80):
+  document (char*80):
+
+read(nbin) (id_fast(iso),id_therm(iso),id_gam(iso),iso=1,num_iso)
+
+read(nbin)  (ev_neut(ig),ig=1,ngp_neut+1)
+  ev_neut : neutron energy group
+
+read(nbin)(ev_gam(ig),ig=1,ngp_gam+1)
+  ev_gam : gamma energy group
+
+
+do iso=1,num_iso
+  if(id_fast(iso).gt.0) then
+    write(nout) ibcd,nidar,ltot,iwa,iwf,iws,jframe,ltype
+     *    ,iwr,(lol(j),la(j),ld(j),j=1,5),nrr,awr,spot
+    call asm_micro
+    write(nout) (adum(j),j=1,ltot)
+
+  endif
+  if(id_therm(iso).ne.0) then
+    call asm_thermal
+  endif
+
+  if(id_gam(iso).ne.0) then
+    write(nout) ibcd,nidar,ltot,iwa,iwf,iws,jframe,ltype
+     1   ,iwr,(lol(j),la(j),ld(j),j=1,5),nrr,awr,spot
+
+    write(nout) (adum(j),j=1,ltot)
+  endif
+
+  call gam_line
+
+  call asm_kerma
+
+
+
+++ asm_micro ++
+
+      iad=0
+      if(iwa.ne.0) then
+        read(ninp,3500) (adum(iad+ig),ig=1,ngrpx)
+        iad = iad + ngrpx
+      endif
+      if(iwf.ne.0) then
+        read(ninp,3500) (adum(iad+ig),ig=1,2*ngrpx)
+        iad = iad + 2*ngrpx
+      endif
+      if(iws.ne.0) then
+        read(ninp,3500) (adum(iad+ig),ig=1,ngrpx)
+        iad = iad + ngrpx
+      endif
+      if(la(1).gt.0) then
+c       inelastic xs
+        read(ninp,3500) (adum(iad+ig),ig=1,la(1))
+        iad = iad +la(1)
+      endif
+      if(la(2).gt.0) then
+c       n2n xs
+        read(ninp,3500) (adum(iad+ig),ig=1,la(2))
+        iad = iad +la(2)
+      endif
+      if(la(5).gt.0) then
+c       n3n xs
+        read(ninp,7700) cmt
+        iad = iad +la(5)
+      endif
+
+C
+C     we save down scatter probability array at last part
+      if(lol(1).gt.0) then
+c       inelastic cdf
+C
+C       negative value is for quadratic anistropy factor
+        k = iad
+        m = 0
+        nds = ld(1)
+        nsg = la(1)
+        do ig=1,nsg
+          read(ninp,3400) igx,ndsr
+          read(ninp,3500) (cdf(jg),jg=1,nds+1)
+          do jg=1,nds+1
+            k = k+1
+            m = m+1
+            adum(k) = cdf(jg)
+          enddo
+        enddo
+        iad = k
+      endif
+      if(lol(3).gt.0) then
+c       inelastic anisotropy
+C       from iad7
+C       P1 part of inelastic
+        read(ninp,7700) cmt
+        k = iad
+        m = 0
+        nds = ld(1)
+        nsg = la(1)
+        do ig=la(3),nsg
+          read(ninp,3400) igr,js
+          if(js.gt.0) then
+            read(ninp,3500) (pdf(jg),jg=1,js)
+            do jg=1,nds+1
+              if(ig+jg-2.le.ngrpx) then
+                k = k+1
+                m = m+1
+                adum(k) = pdf(jg)
+              endif
+           enddo
+          endif
+        enddo
+        iad = k
+      endif
+      if(lol(2).gt.0) then
+c       (n,2n) down scatter cdf
+C       from iad8
+C       it is isotropic when lol(4) = 0
+        read(ninp,7700) cmt
+        k = iad
+        m = 0
+        nds = ld(2)
+        nsg = la(2)
+        do ig=1,nsg
+          read(ninp,3400) igr,jsr
+          read(ninp,3500) (cdf(jg),jg=1,jsr+1)
+          js = 0
+          do jg=1,nds
+            if((ig+jg-1).le.ngrpx) then
+              k = k+1
+              m = m+1
+              adum(k) = cdf(jg)
+              js = jg
+            endif
+          enddo
+          k = k+1
+          m = m+1
+          if(js.ne.jsr) then
+            print *,'** expecting js=',js,jsr
+            stop
+          endif
+          adum(k) = cdf(js+1)
+        enddo
+        iad = k
+      if(lol(5).gt.0) then
+c       (n,3n) downscatter cdf
+C       from iad10
+        read(ninp,7700) cmt
+        m = 0
+        nds = ld(5)
+        nsg = la(5)
+        do ig=1,nsg
+          read(ninp,3400) igr,jsr
+          read(ninp,3500) (cdf(jg),jg=1,jsr+1)
+          js = 0
+          do jg=1,nds
+            if((ig+jg-1).le.ngrpx) then
+              k = k+1
+              m = m+1
+              adum(k) = cdf(jg)
+              js = jg
+            endif
+          enddo
+          k = k+1
+          m = m+1
+          adum(k) = cdf(js+1)
+        enddo
+        iad = k
+      endif
+c
+c     ltype elastic eq. area xmu
+      read(ninp,7700) cmt
+      k = iad
+      do ig=1,ngrpx
+        read(ninp,3400) igr,n
+        k = k+1
+        adum(k) = n
+        if(n.gt.0) then
+         read(ninp,3500) (pdf(jg),jg=1,n)
+         do jg=1,n
+           k = k+1
+           adum(k) = pdf(jg)
+         enddo
+        endif
+      enddo
+      iad = k
+      end
+
+
++++ asm_thermal
+      if(id_therm(iso).ne.0) then
+
+          write(npun,7700) 'thermal siga'
+ 3500     format(1p6e12.5)
+          write(npun,3500) (siga(ig),ig=1,num_therm_gps)
+          write(npun,7700) 'thermal sigs'
+          write(npun,3500) (sigs(ig),ig=1,num_therm_gps)
+          write(npun,7700) 'P0'
+          do j=1,num_therm_gps
+            write(npun,3500)  (P0(ig,j),ig=1,num_therm_gps)
+          enddo
+          write(npun,7700) 'P1'
+          do j=1,num_therm_gps
+            write(npun,3500)  (P1(ig,j),ig=1,num_therm_gps)
+          enddo
+
+
+        write(nout)  jscat,nbound,head
+        write(nout) (siga(ig),ig=1,num_therm_gps)
+        write(nout) (sigs(ig),ig=1,num_therm_gps)
+c       P0
+        write(nout) ((P0(ig,j),ig=1,num_therm_gps),j=1,num_therm_gps)
+c       P1
+        write(nout) ((P1(ig,j),ig=1,num_therm_gps),j=1,num_therm_gps)
+
+
++++ asm_gamma
+      if(id_gam(iso).gt.0) then
+          write(npun,3000) ibcd
+          write(npun,3100) nidar
+          write(npun,3100) ltot,iwa,iwf,iws,jframe,ltype,iwr
+          write(npun,3100) lol
+          write(npun,3100) la
+          write(npun,3100) ld
+          write(npun,3200) nrr,awr,spot
+        endif
+        read(nbin) (adum(j),j=1,ltot)
+        call microblk(npun, num_gam_gps,adum,ltot,
+     *       iwa,iwf,iws,lol,la,ld)
+
++++ capture gamma
+        write(npun,7700) 'num_gamline,sig_2200,sig_gprod'
+        write(npun,3700) num_gamline,sig_2200,sig_gprod
+ 3700   format(i6,6x,1p2e12.5)
+
+
++++ asm_kerma
+C     capture gamma
+        write(nout) num_gamline,sig_2200,sig_gprod
+c     xkerma_n
+        write(nout) (xkerma_n(ig),ig=1,num_neut_gps)
+c     xkerma_g
+        write(nout) (xkerma_g(ig),ig=1,num_gam_gps)
+C
+C     gamlines
+      if(num_gamline.gt.0) then
+c       'g_yield and g_energy'
+          write(nout) (g_yield(i),g_energy(i),i=1,num_gamline)
+      endif
+      end
+        write(nout) (xkerma_n(ig),ig=1,num_neut_gps)
+
+

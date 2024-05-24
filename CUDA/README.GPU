@@ -1,0 +1,14 @@
+
+
+reserve device storage at main CPU program using cudaMalloc
+prepare data using cudaMemcpy
+
+then 
+pass it as parameter during call to kernel
+
+or use cudaMemcpyToSymbol
+
+
+nvcc parameter 
+ -rdc=true   : to resolve externals later
+

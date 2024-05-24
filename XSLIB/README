@@ -1,0 +1,72 @@
+
+cross section library is in 4 parts
+
+- fast neutron (72 G)
+  using microblk
+  
+- thermal neutron (22 G)
+  absorption cs (22G)
+  scattering cs (22G)
+  P0 matrix (22x22)
+  P1 matrix (22x22)
+  *  no fission
+
+
+- gamma library (86 G)
+  using microblk
+
+- capture gammas
+  num_gamline
+  sig_2200
+  sig_gprod
+
+- kerma factors
+  neutron kerma( 72+22G)
+  gamma kerma (86G)
+
+- gamma yield
+  yield, energy (num_gamline)
+
+
+microblk form
+  = absorption xs	iwa	photoabsorption
+  = fission xs		iwf     * NO fission is allowed
+  = elastic xs		iws	photon Compton scattering
+  = inelastic xs	la[0]
+  = n2n xs		la[1]	photon pair-production
+  = n3n xs		la[4]
+  = inelastic cdf	lol[0]
+  = inelastic anisotropy lol[2]   photon (pair-production)
+  = n2n cdf    		lol[1]
+  = n3n cdf    		lol[5]
+  = elastic equal area xmu
+
+
+
+fast group
+ total cross sections
+  tot_n = abs + elas + inel + n2n + n3n
+
+  elastic 	- equal area xmu
+  inelastic 	- cdf, anisotropy
+  n2n		- n2n cdf (g->g')
+  n3n		- n3n cdf
+
+thermal group
+  tot_th = absorption + scattering
+  scattering - P0 matrix, P1 matrix
+
+  absorption produce gamma yield
+
+
+photon group
+ total cross section
+  tot_ph = abs + elas + pair(n2n)
+  elas : sig    xmu is given but determined from Compton
+  pair : sig    cdf is given but always to 512 keV (group 44)
+
+  pair prod. cdf(energy)  - isotropic production
+
+  
+
+
