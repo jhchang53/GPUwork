@@ -1,5 +1,5 @@
 /*
-        matlib.cpp
+        matgpu.cu
         read material file
 	and create mater sigtot and cdf
 */
@@ -9,6 +9,8 @@
 #include <vector>
 #include "XSLIB.h"
 #include "Mater.h"
+#include <cuda_runtime.h>
+#include "Matdev.h"
 
 using namespace std;
 
@@ -22,8 +24,9 @@ int main()
   mat->setXSL(xsl);
   vector<string> matlist = {"buffer","tissue","PMMA","brain_ICRU_46_adult"};
   mat->setupMatLib(matlist);
-  // mat->print(2);
   mat->sendMat();
-  delete mat;
-  delete xslib;
+  /*  call GPU  */
+  MatSet<<<1,1>>>();
+  cudaDeviceSynchronize();
+
 };

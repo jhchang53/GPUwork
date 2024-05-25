@@ -5,6 +5,8 @@ CUDAL = /usr/local/cuda-12.4/targets/x86_64-linux/lib
 CXX = nvcc
 CXXFLAGS = -g -rdc=true -G -I$(CUDAH)
 
+matgpu: matgpu.o Mater.o Mathost.o Matdev.o XSLIB.o  XSiso.o XSiso_collect.o
+	nvcc -rdc=true -o matgpu -g -G $^
 matlib: matlib.o Mater.o XSLIB.o  XSiso.o XSiso_collect.o
 	nvcc -rdc=true -o matlib -g -G $^
 mater: mater.o Mater.o XSLIB.o  XSiso.o XSiso_collect.o

@@ -291,17 +291,17 @@ int Mater::collectTherm(int m, int niso, int isolist[], double denlist[],
 
 int Mater::setupMatLib(std::vector<string> matlist)
 {
-  int nmat = matlist.size();
-  int *ind_iso = new int[nmat+1];
-  std::vector<int> iso_vec;
-  int *ind_fmac = new int[nmat+1];
-  int *ind_fcdf = new int[nmat+1];
-  std::vector<double> fast_mac_vec;
-  std::vector<double> fast_cdf_vec;
-  int *ind_tmac = new int[nmat+1];
-  int *ind_tcdf = new int[nmat+1];
-  std::vector<double> therm_mac_vec;
-  std::vector<double> therm_cdf_vec;
+  nmat = matlist.size();
+  ind_iso = new int[nmat+1];
+  iso_vec.clear();
+  ind_fmac = new int[nmat+1];
+  ind_fcdf = new int[nmat+1];
+  fast_mac_vec.clear();
+  fast_cdf_vec.clear();
+  ind_tmac = new int[nmat+1];
+  ind_tcdf = new int[nmat+1];
+  therm_mac_vec.clear();
+  therm_cdf_vec.clear();
 
   int indiso = 0;
   int indfm = 0;
@@ -365,14 +365,18 @@ int Mater::setupMatLib(std::vector<string> matlist)
     delete [] isolist;
     delete [] denlist;
   }	// for mat
+  ind_iso[nmat] = indiso;
   ind_fmac[nmat] = indfm;
   ind_fcdf[nmat] = indfc;
   ind_tmac[nmat] = indtm;
   ind_tcdf[nmat] = indtc;
 
   assert(indfm == fast_mac_vec.size());
+  return 0;
+};	// Mater::setupMatLib
 
-  int look = 2;
+void Mater::print(int look)
+{
   printf("fast:");
   for(int i=ind_fmac[look]; i < ind_fmac[look+1]; i++) {
     printf(" %.5le",fast_mac_vec[i]);
@@ -415,5 +419,4 @@ int Mater::setupMatLib(std::vector<string> matlist)
   }
   printf("\n");
 
-  return 0;
-};	// Mater::setupMatLib
+};	// Mater::print
